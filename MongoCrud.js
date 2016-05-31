@@ -1,65 +1,58 @@
-/**
- * Created by Kasper on 25-05-2016.
- */
-var express = require('express');
-var jokes = require('../model/jokeFacade');
-var router = express.Router();
-
-router.get("/jokes",function(req,res, next){
-    jokes.allJokes(function(err,data){
+var _getallJokes = function(callback){
+    var db = connect.get();
+    db.collection("jokes").find({}).toArray(function(err,data){     // This is our seach thing
         if(err){
-            throw new Error(err);
+            callback(err);
         }else{
-            res.json({jokes: data});
+            callback(null,data);
         }
-    })
-});
+    });
+}
 
-router.get("/joke/random",function(req,res, next){
-    jokes.allJokes(function(err,data){
+var _getOneJoke = function(id,callback){
+    var db = connect.get();
+    db.collection("jokes").find({"_id" : ObjectId(id)}).toArray (function(err,data){     // This is our seach thing
         if(err){
-            throw new Error(err);
+            callback(err);
         }else{
-            // Here i get all the jokes, but only returns one joke in the end. This is done by making a random number.
-            // Not the most efficiant, but it works.
-            var randomNumber = Math.floor(Math.random() * data.length);
-            res.json({randomJoke : data[randomNumber]});
+            callback(null,data);
         }
-    })
-});
+    });
+}
 
-router.get('/findjoke/:id',function(req,res, next){                 // find a Joke pr. ID
-    jokes.findJoke(req.params.id, function(err,data){
+
+var _updateOneJoke = function(id, toUpdate,callback){
+    var db = connect.get();
+    db.collection("jokes").updateOne({"_id": id},toUpdate,function(err,data){
         if(err){
-            throw new Error(err);
+            callback(err);
         }
-        res.json({joke: data[0]})
-    })
-});
+        else{
+            callback(null,'The Joke was succesfully edited'+data);
+        }
+    });
+}
 
-router.post("/addJoke/",function(req,res, next){                    // make a new Joke
-    var newjoke = req.body;
-    newjoke.lastEdited = new Date();
-    jokes.addJoke(newjoke);
-    res.json({joke: newjoke});
-});
-
-router.put("/editJoke/:id", function(req, res, next){               // edit a Joke
-    jokes.editJoke(req.params.id, req.body, function(err,data){
+var _createOneJoke = function(theJoke,callback){
+    var db = connect.get();
+    db.collection("jokes").insertOne(theJoke,function(err,data){
         if(err){
-            throw new Error(err);
+            callback(err);
         }
-        res.json({editedJoke: data})
-    })
-});
+        else{
+            callback(null,'This Joke was succesfully added'+data);
+        }
+    });
+}
 
-router.delete("/deleteJoke/:id", function(req, res, next){
-    jokes.deleteJoke(req.params.id, function(err,data){
+var _deleteOneJoke = function(id,callback){
+    var db = connect.get();
+    db.collection("jokes").deleteOne({"_id": ObjectId(id)}, function(err,data){
         if(err){
-            throw new Error(err);
+            callback(err);
         }
-        res.json({deletedJoke: data})
-    })
-});
-
-module.exports = router;
+        else{
+            callback(null,'Joke was succesfully deleted'+data);
+        }
+    });
+}
